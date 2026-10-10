@@ -1,4 +1,4 @@
-import type { MatchMeta } from "./matches";
+import type { MatchMeta } from "./matches.js";
 import type {
   Ball,
   BatterLine,
@@ -7,7 +7,7 @@ import type {
   MatchState,
   OverSummary,
   WindowSummary,
-} from "./types";
+} from "./types.js";
 
 export interface Timeline {
   meta: MatchMeta;
@@ -416,17 +416,17 @@ export function summarizeWindow(tl: Timeline, from: number, to: number, focusTea
           if (bm.has(b.wicket.out)) bm.get(b.wicket.out)!.out = dismissal(tl, b);
           moments.push({
             i: b.i, label: b.label, inn, kind: "wicket",
-            text: `WICKET — ${nameOf(tl, b.wicket.out)} ${dismissal(tl, b)}, ${out.runs} (${out.balls}). ${team} ${b.score}/${b.wkts}`,
+            text: `WICKET: ${nameOf(tl, b.wicket.out)} ${dismissal(tl, b)}, ${out.runs} (${out.balls}). ${team} ${b.score}/${b.wkts}`,
           });
         }
         if (b.runsBat === 6) {
-          moments.push({ i: b.i, label: b.label, inn, kind: "six", text: `SIX — ${nameOf(tl, b.batter)} off ${nameOf(tl, b.bowler)}` });
+          moments.push({ i: b.i, label: b.label, inn, kind: "six", text: `SIX: ${nameOf(tl, b.batter)} off ${nameOf(tl, b.bowler)}` });
         }
         for (const m of [50, 100]) {
           if (striker.runs >= m && striker.runs - b.runsBat < m) {
             moments.push({
               i: b.i, label: b.label, inn, kind: "milestone",
-              text: `${m === 50 ? "FIFTY" : "HUNDRED"} — ${nameOf(tl, b.batter)} reaches ${striker.runs} off ${striker.balls}`,
+              text: `${m === 50 ? "FIFTY" : "HUNDRED"}: ${nameOf(tl, b.batter)} reaches ${striker.runs} off ${striker.balls}`,
             });
           }
           if (!b.wicket && pship >= m && prevP < m) {
@@ -458,9 +458,9 @@ export function summarizeWindow(tl: Timeline, from: number, to: number, focusTea
         };
         overs.push(ov);
         if (!ov.partial && ov.runs >= 15) {
-          moments.push({ i: last, label: `Over ${o + 1}`, inn, kind: "bigover", text: `BIG OVER — ${ov.runs} off ${nameOf(tl, ov.bowler)} (${ov.seq.join(" ")})` });
+          moments.push({ i: last, label: `Over ${o + 1}`, inn, kind: "bigover", text: `BIG OVER: ${ov.runs} off ${nameOf(tl, ov.bowler)} (${ov.seq.join(" ")})` });
         } else if (!ov.partial && ov.runs <= 4 && o >= 6) {
-          moments.push({ i: last, label: `Over ${o + 1}`, inn, kind: "tightover", text: `TIGHT OVER — only ${ov.runs} off ${nameOf(tl, ov.bowler)}${ov.wkts ? ` and ${ov.wkts} wicket` : ""}` });
+          moments.push({ i: last, label: `Over ${o + 1}`, inn, kind: "tightover", text: `TIGHT OVER: only ${ov.runs} off ${nameOf(tl, ov.bowler)}${ov.wkts ? ` and ${ov.wkts} wicket` : ""}` });
         }
       }
       o++;
@@ -470,7 +470,7 @@ export function summarizeWindow(tl: Timeline, from: number, to: number, focusTea
       const last = tl.balls[e];
       moments.push({
         i: e, label: "Break", inn, kind: "break",
-        text: `INNINGS BREAK — ${team} finished on ${last.score}/${last.wkts} (${oversText(last.legalBalls)}). Target ${last.score + 1}.`,
+        text: `INNINGS BREAK: ${team} finished on ${last.score}/${last.wkts} (${oversText(last.legalBalls)}). Target ${last.score + 1}.`,
       });
     }
   }
@@ -485,7 +485,7 @@ export function summarizeWindow(tl: Timeline, from: number, to: number, focusTea
         overNo: ov.overNo,
         inn: ov.inn,
         delta,
-        text: `Over ${ov.overNo} (${data.innings[ov.inn].team} batting; ${nameOf(tl, ov.bowler)} to ${batters.join(" & ")}): ${ov.seq.join(" ")} — ${ov.runs} runs${ov.wkts ? `, ${ov.wkts} wkt` : ""}. ${focusTeam} win chance ${ov.chanceBefore}% → ${ov.chanceAfter}%`,
+        text: `Over ${ov.overNo} (${data.innings[ov.inn].team} batting; ${nameOf(tl, ov.bowler)} to ${batters.join(" & ")}): ${ov.seq.join(" ")}, ${ov.runs} runs${ov.wkts ? `, ${ov.wkts} wkt` : ""}. ${focusTeam} win chance ${ov.chanceBefore}% → ${ov.chanceAfter}%`,
       };
     }
   }
@@ -499,6 +499,26 @@ export function summarizeWindow(tl: Timeline, from: number, to: number, focusTea
     bowling: [...bowlW].map(([team, m]) => ({ team, lines: [...m.values()].sort((a, b) => b.wkts - a.wkts || a.runs - b.runs) })),
     turning, crossedInnings,
   };
+}
+
+/** Index reached after `n` more overs (legal balls), possibly crossing the innings break. */
+export function oversAhead(tl: Timeline, k: number, n: number): number {
+  let legal = 0;
+  for (let i = k + 1; i < tl.balls.length; i++) {
+    if (tl.balls[i].legal) legal++;
+    if (legal >= n * 6) return i;
+  }
+  return tl.balls.length - 1;
+}
+
+/** Index of the ball just before the last `n` overs ending at `to` (can cross the innings break). */
+export function oversBack(tl: Timeline, to: number, n: number): number {
+  let legal = 0;
+  for (let i = to; i >= 0; i--) {
+    if (tl.balls[i].legal) legal++;
+    if (legal >= n * 6) return i - 1;
+  }
+  return -1;
 }
 
 /** Which team's win chance to track: the fan's team, else whoever is batting now. */

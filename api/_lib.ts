@@ -1,7 +1,7 @@
-import { buildTimeline, type Timeline } from "../shared/engine";
-import { getMatch } from "../shared/matches";
-import { LANGS, VIBES } from "../shared/prompt";
-import type { Lang, Prefs, Vibe } from "../shared/types";
+import { buildTimeline, type Timeline } from "../shared/engine.js";
+import { getMatch } from "../shared/matches.js";
+import { LANGS, VIBES } from "../shared/prompt.js";
+import type { Lang, Prefs, Vibe } from "../shared/types.js";
 
 export const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 

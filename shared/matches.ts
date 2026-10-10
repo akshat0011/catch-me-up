@@ -1,6 +1,6 @@
-import type { RawMatch } from "./types";
-import asiad from "./matches/asiad-2026-final.json";
-import wc from "./matches/t20wc-2024-final.json";
+import type { RawMatch } from "./types.js";
+import asiad from "./matches/asiad-2026-final.js";
+import wc from "./matches/t20wc-2024-final.js";
 
 export interface TeamStyle {
   code: string;
@@ -100,16 +100,16 @@ function meta(
 }
 
 export const MATCHES: MatchMeta[] = [
-  meta(asiad as unknown as RawMatch, {
+  meta(asiad, {
     title: "India vs Pakistan",
-    subtitle: "Asian Games · Gold medal match · 3 Oct 2026",
-    stakes: "Asian Games men's cricket final (T20) — gold medal on the line, India vs Pakistan.",
+    subtitle: "Asian Games final, 3 Oct 2026",
+    stakes: "Asian Games men's cricket final (T20), gold medal on the line, India vs Pakistan.",
     demoStart: { inn: 0, over: 10 },
   }),
-  meta(wc as unknown as RawMatch, {
+  meta(wc, {
     title: "India vs South Africa",
-    subtitle: "T20 World Cup · Final · 29 Jun 2024",
-    stakes: "ICC Men's T20 World Cup final — India hunting a first ICC trophy in 11 years, South Africa in their first-ever men's World Cup final.",
+    subtitle: "T20 World Cup final, 29 Jun 2024",
+    stakes: "ICC Men's T20 World Cup final. India hunting a first ICC trophy in 11 years, South Africa in their first-ever men's World Cup final.",
     demoStart: { inn: 1, over: 12 },
   }),
 ];

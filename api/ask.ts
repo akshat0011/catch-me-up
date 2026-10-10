@@ -1,13 +1,10 @@
-import { buildFacts } from "../shared/context";
-import { askSystem } from "../shared/prompt";
-import { json, parseCommon, rateLimited, streamText, type Turn } from "./_lib";
-
-export const config = { runtime: "edge" };
+import { buildFacts } from "../shared/context.js";
+import { askSystem, styleReminder } from "../shared/prompt.js";
+import { json, parseCommon, rateLimited, streamText, type Turn } from "./_lib.js";
 
 const MAX_Q = 300;
 
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+export async function POST(req: Request): Promise<Response> {
   const body = await req.json().catch(() => null);
   const parsed = parseCommon(body);
   if (typeof parsed === "string") return json({ error: parsed }, 400);
@@ -27,7 +24,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
   const turns: Turn[] = history.length
-    ? [{ role: "user", text: `${facts}\n\n${history[0].text}` }, ...history.slice(1), { role: "user", text: question }]
-    : [{ role: "user", text: `${facts}\n\n${question}` }];
+    ? [{ role: "user", text: `${facts}\n\n${history[0].text}` }, ...history.slice(1), { role: "user", text: `${question}\n\n(${styleReminder(prefs.lang, prefs.vibe)})` }]
+    : [{ role: "user", text: `${facts}\n\n${question}\n\n(${styleReminder(prefs.lang, prefs.vibe)})` }];
   return streamText(askSystem(prefs.lang), turns, 1024);
 }

@@ -7,10 +7,11 @@ import {
   stateAt,
   summarizeWindow,
   type Timeline,
-} from "./engine";
-import type { MatchState, Prefs, WindowSummary } from "./types";
+} from "./engine.js";
+import type { MatchState, Prefs, WindowSummary } from "./types.js";
 
 const pct = (n: number) => `${n}%`;
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : word.endsWith("x") ? "es" : "s"}`;
 const overs = (balls: number) => `${Math.floor(balls / 6)}.${balls % 6}`;
 
 function stateLine(tl: Timeline, s: MatchState): string {
@@ -22,7 +23,7 @@ function stateLine(tl: Timeline, s: MatchState): string {
     const projected = Math.round(s.score + expectedRuns(s.ballsLeft, s.wkts));
     line += `, run rate ${s.crr.toFixed(2)}, projected ≈${projected}`;
   }
-  if (s.inningsOver && s.inn === 0) line += ` — innings complete, ${tl.meta.data.innings[1].team} need ${s.score + 1} to win`;
+  if (s.inningsOver && s.inn === 0) line += `, innings complete, ${tl.meta.data.innings[1].team} need ${s.score + 1} to win`;
   return line;
 }
 
@@ -45,7 +46,7 @@ export function buildFacts(tl: Timeline, from: number, to: number, prefs: Prefs)
   const crease = now.atCrease
     .map((b) => `${nameOf(tl, b.id)} ${b.runs}${now.inningsOver ? "" : "*"} (${b.balls})${b.onStrike && !now.inningsOver ? " on strike" : ""}`)
     .join(", ");
-  const bowler = now.bowler ? `${nameOf(tl, now.bowler.id)} ${overs(now.bowler.balls)}-${now.bowler.runs}-${now.bowler.wkts}` : "—";
+  const bowler = now.bowler ? `${nameOf(tl, now.bowler.id)} ${overs(now.bowler.balls)}-${now.bowler.runs}-${now.bowler.wkts}` : "none yet";
   L.push(`RIGHT NOW (the latest ball; nothing after this has happened yet): ${stateLine(tl, now)}.`);
   if (now.matchOver) L.push(`MATCH FINISHED: ${now.result}.`);
   else {
@@ -56,13 +57,13 @@ export function buildFacts(tl: Timeline, from: number, to: number, prefs: Prefs)
   if (now.firstInnings) L.push(`  First innings: ${now.firstInnings.team} ${now.firstInnings.score}/${now.firstInnings.wkts} (${now.firstInnings.oversText}).`);
   L.push("");
 
-  L.push(`MISSED IN NUMBERS: ${w.balls} balls, ${w.runs} runs, ${w.wkts} wickets, ${w.fours} fours, ${w.sixes} sixes, ${w.extras} extras. ${focus} win chance ${pct(w.chanceFrom)} → ${pct(w.chanceTo)}.${w.crossedInnings ? " The innings break happened while the fan was away." : ""}`);
+  L.push(`MISSED IN NUMBERS: ${plural(w.balls, "ball")}, ${plural(w.runs, "run")}, ${plural(w.wkts, "wicket")}, ${plural(w.fours, "four")}, ${plural(w.sixes, "six")}, ${plural(w.extras, "extra")}. ${focus} win chance ${pct(w.chanceFrom)} → ${pct(w.chanceTo)}.${w.crossedInnings ? " The innings break happened while the fan was away." : ""}`);
   L.push("OVER BY OVER (missed; • = dot, wd = wide, nb = no-ball, lb = leg-bye, W = wicket):");
   for (const o of w.overs) {
     L.push(`  ${d.innings[o.inn].team} ov ${o.overNo}${o.partial ? " (part)" : ""}, ${nameOf(tl, o.bowler)} bowling: ${o.seq.join(" ")} = ${o.runs}${o.wkts ? `, ${o.wkts}W` : ""} | ${focus} ${o.chanceBefore}→${o.chanceAfter}%`);
   }
   L.push("KEY MOMENTS (missed):");
-  if (!w.moments.length) L.push("  none — steady cricket");
+  if (!w.moments.length) L.push("  none, steady cricket");
   for (const m of w.moments) L.push(`  ${m.label}: ${m.text}`);
   if (w.turning) L.push(`BIGGEST SWING: ${w.turning.text}`);
 
@@ -103,7 +104,7 @@ export function buildFacts(tl: Timeline, from: number, to: number, prefs: Prefs)
   L.push("");
   L.push("SCORECARD SO FAR:");
   for (const c of cards) {
-    L.push(`  ${c.team} ${c.score}/${c.wkts} (${oversText(c.legalBalls)})${c.complete ? "" : " — in progress"}`);
+    L.push(`  ${c.team} ${c.score}/${c.wkts} (${oversText(c.legalBalls)})${c.complete ? "" : ", in progress"}`);
     L.push("    " + c.batting.map((b) => `${nameOf(tl, b.id)} ${b.runs}(${b.balls})${b.out ? ` ${b.out}` : ""}`).join(", "));
     L.push("    Bowling: " + c.bowling.map((b) => `${nameOf(tl, b.id)} ${overs(b.balls)}-${b.runs}-${b.wkts}`).join(", "));
   }

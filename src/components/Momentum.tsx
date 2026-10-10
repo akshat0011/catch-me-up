@@ -18,7 +18,7 @@ export function Momentum({ tl, w }: { tl: Timeline; w: WindowSummary }) {
   const maxRuns = Math.max(18, ...w.overs.map((o) => o.runs));
   const x = (i: number) => PAD_L + slot * i + slot / 2;
   const y = (c: number) => TOP + TOP_H - (c / 100) * TOP_H;
-  const focusColor = tl.meta.teams[w.focusTeam]?.color ?? "#C8F31D";
+  const focusColor = tl.meta.teams[w.focusTeam]?.color ?? "#fafafa";
   const pts = [`${PAD_L},${y(w.chanceFrom)}`, ...w.overs.map((o, i) => `${x(i)},${y(o.chanceAfter)}`)];
   const area = `${pts.join(" ")} ${x(n - 1)},${TOP + TOP_H} ${PAD_L},${TOP + TOP_H}`;
   const turnIdx = w.turning ? w.overs.findIndex((o) => o.overNo === w.turning!.overNo && o.inn === w.turning!.inn) : -1;

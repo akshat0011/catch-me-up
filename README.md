@@ -28,7 +28,7 @@ ball-by-ball data ──► cricket engine (deterministic)  ──► fact sheet
   key moments (wickets, big/tight overs, milestones) and the over with the biggest swing.
 - **`shared/context.ts`** builds the fact sheet the model sees. The UI's "Show the facts the AI was given"
   button shows exactly that text.
-- **`api/catchup.ts`, `api/ask.ts`** are Vercel Edge Functions. The client sends only a match id, a ball
+- **`api/catchup.ts`, `api/ask.ts`** are Vercel Functions (Node.js runtime, streaming). The client sends only a match id, a ball
   range and preferences. The server owns the data and the prompt, validates the input and streams Gemini's text back.
 - **Guardrails:** the model only ever sees balls up to "now", so it can't spoil the match even when it knows how the
   real game ended. It's told not to invent shot details or stats. If the AI is unavailable, the app falls back to a

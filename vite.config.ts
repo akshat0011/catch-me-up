@@ -2,7 +2,7 @@ import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-// In production, files in /api run as Vercel Edge Functions. In dev, this plugin
+// In production, files in /api run as Vercel Functions (Node.js, Web handler signature). In dev, this plugin
 // routes /api/* to the same handlers so `npm run dev` works without the Vercel CLI.
 function devApi(): Plugin {
   return {
@@ -21,7 +21,10 @@ function devApi(): Plugin {
             headers: req.headers as Record<string, string>,
             body: req.method === "GET" || req.method === "HEAD" ? undefined : Buffer.concat(chunks),
           });
-          const response: Response = await mod.default(request);
+          const handler = mod[req.method ?? "GET"];
+          const response: Response = handler
+            ? await handler(request)
+            : new Response(JSON.stringify({ error: "method not allowed" }), { status: 405 });
           res.statusCode = response.status;
           response.headers.forEach((value, key) => res.setHeader(key, value));
           if (!response.body) return res.end();

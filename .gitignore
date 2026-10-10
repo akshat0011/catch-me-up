@@ -6,3 +6,5 @@ dist
 .vercel
 *.tsbuildinfo
 .DS_Store
+.env*
+.serena

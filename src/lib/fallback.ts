@@ -16,7 +16,7 @@ export function fallbackRecap(tl: Timeline, w: WindowSummary, now: MatchState): 
     .slice(0, 4)
     .sort((a, b) => a.i - b.i)
     .map((m) => `${m.label}: ${m.text}`);
-  if (!recap.length) recap.push(`${w.runs} runs, ${w.wkts} wickets — steady cricket.`);
+  if (!recap.length) recap.push(`${w.runs} runs, ${w.wkts} wickets, steady cricket.`);
   const right = now.matchOver
     ? now.result ?? ""
     : now.need !== null

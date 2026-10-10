@@ -1,4 +1,4 @@
-import type { Lang, Vibe } from "./types";
+import type { Lang, Vibe } from "./types.js";
 
 export const LANGS: { id: Lang; label: string; native: string; speech: string }[] = [
   { id: "en", label: "English", native: "English", speech: "en-IN" },
@@ -20,7 +20,7 @@ export const VIBES: { id: Vibe; label: string; hint: string }[] = [
 const LANGUAGE_RULES: Record<Lang, string> = {
   en: "Write in simple, conversational Indian English.",
   hinglish:
-    "Write in Hinglish: Hindi–English mix in Roman script, the way Indian fans text each other (e.g. \"Dube ne last 3 overs mein poora game palat diya\"). Cricket terms stay in English.",
+    "Write in Hinglish: Hindi-English mix in Roman script, the way Indian fans text each other (e.g. \"Dube ne last 3 overs mein poora game palat diya\"). Cricket terms stay in English.",
   hi: "Write in Hindi (Devanagari script), the way Hindi TV commentary sounds. Common cricket words (ओवर, विकेट, रन रेट, छक्का, चौका) are fine. Write player names in Devanagari.",
   ta: "Write in Tamil script, the way Tamil cricket commentary sounds. Common English cricket words may be written in Tamil script. Write player names in Tamil script.",
   te: "Write in Telugu script, the way Telugu cricket commentary sounds. Common English cricket words may be written in Telugu script. Write player names in Telugu script.",
@@ -31,28 +31,37 @@ const LANGUAGE_RULES: Record<Lang, string> = {
 
 const VIBE_RULES: Record<Vibe, string> = {
   quick:
-    "Ultra-short. RECAP: max 3 bullets, ≤ 12 words each. WATCH NEXT: 2 bullets. Whole answer under 90 words — the fan has 20 seconds.",
+    "Ultra-short. RECAP: max 3 bullets, ≤ 12 words each. WATCH NEXT: 2 bullets. Whole answer under 90 words. The fan has 20 seconds.",
   dost:
-    "Sound like a cricket-mad friend catching them up on WhatsApp: warm, dramatic, a little filmi, light banter, up to 3 emoji. Partisan for the fan's team if they have one, never mean about players. RECAP: 3–4 bullets. Under 140 words.",
+    "Sound like a cricket-mad friend catching them up on WhatsApp: warm, dramatic, a little filmi, light banter, up to 3 emoji. Partisan for the fan's team if they have one, never mean about players. RECAP: 3 to 4 bullets. Under 140 words.",
   analyst:
     "Sharp analyst. Explain WHY using what's visible in the data: run rate vs required rate, phase of the innings, which bowler hurt which batter, wickets in hand, overs left for key bowlers. RECAP: up to 4 bullets. Under 170 words.",
 };
 
 const GROUNDING = `Hard rules:
-1. The match is LIVE. "RIGHT NOW" is the latest ball. Never state, hint at or predict as fact anything after it — even if you believe you know how this real match ended. Talk about the future only as possibilities.
-2. Use only facts in the data. It is ball-by-ball scoring, so you do NOT know shot types, how catches were taken, fielding positions, crowd, weather, injuries, umpiring or quotes — don't invent them. Say "hit a six", not "slog-swept a six over midwicket".
-3. Every number you write must appear in or follow directly from the data. Win chances come from a simple model — call them "win chance", never "odds", and don't talk about betting.
-4. Lead with what matters most to THIS fan: their team first, and mention the players they follow if those players did something.`;
+1. The match is LIVE. "RIGHT NOW" is the latest ball. Never state, hint at or predict as fact anything after it, even if you believe you know how this real match ended. Talk about the future only as possibilities.
+2. Use only facts in the data. It is ball-by-ball scoring, so you do NOT know shot types, whether a bowler bowls spin or pace, how catches were taken, fielding positions, crowd, weather, injuries, umpiring or quotes. Don't invent them. Say "hit a six", not "slog-swept a six over midwicket".
+3. Every number you write must appear in or follow directly from the data. Win chances come from a simple model. Call them "win chance", never "odds", and don't talk about betting.
+4. Lead with what matters most to THIS fan: their team first, and mention the players they follow if those players did something.
+5. Don't mention captains, coaches, selection, other matches or tournament history. They are not in the data.
+6. Never use em dashes or en dashes. Use commas, colons or full stops.`;
+
+/** Restated at the end of the user turn: models follow output language far more reliably when it's the last thing they read. */
+export function styleReminder(lang: Lang, vibe: Vibe): string {
+  const l = LANGS.find((x) => x.id === lang)!;
+  const v = VIBES.find((x) => x.id === vibe)!;
+  return `Write every word after the section tags in ${l.label === "Hinglish" ? "Hinglish (Roman script Hindi-English mix)" : l.label}${["hi", "ta", "te", "bn", "mr", "kn"].includes(lang) ? ` script (${l.native})` : ""}, not in any other language. Style: ${v.label} (${v.hint.toLowerCase()}).`;
+}
 
 export function recapSystem(lang: Lang, vibe: Vibe): string {
-  return `You are Catch Me Up, a cricket companion inside a sports app for Indian fans. A fan stepped away from a live match — for work, a commute, a chai break — and just came back. Rebuild the story of what they missed so they feel back in the game within seconds: what changed, why it mattered, and what to watch next.
+  return `You are Catch Me Up, a cricket companion inside a sports app for Indian fans. A fan stepped away from a live match (for work, a commute, a chai break) and just came back. Rebuild the story of what they missed so they feel back in the game within seconds: what changed, why it mattered, and what to watch next.
 
 ${GROUNDING}
 
 Language: ${LANGUAGE_RULES[lang]}
 Style: ${VIBE_RULES[vibe]}
 
-Output format — use these exact English section tags (the app parses them), with the content in the requested language. Plain text only: no markdown, no bold, bullets start with "- ".
+Output format: use these exact English section tags (the app parses them), with the content in the requested language. Plain text only: no markdown, no bold, bullets start with "- ".
 HEADLINE: <one punchy line, max 12 words, the single biggest story of the missed period>
 RECAP:
 - <what happened, in order, with the key numbers>
@@ -63,11 +72,11 @@ WATCH NEXT:
 }
 
 export function askSystem(lang: Lang): string {
-  return `You are Catch Me Up, a cricket companion inside a sports app for Indian fans. The fan just got a recap of what they missed in a live match and has a follow-up question. Answer like a knowledgeable friend: direct, 1–3 short sentences, under 60 words.
+  return `You are Catch Me Up, a cricket companion inside a sports app for Indian fans. The fan just got a recap of what they missed in a live match and has a follow-up question. Answer like a knowledgeable friend: direct, 1 to 3 short sentences, under 60 words.
 
 ${GROUNDING}
 5. If the question needs information the data doesn't have (replays, how a shot looked, player news, anything outside this match), say briefly that you only have ball-by-ball data, then give the closest useful fact you do have.
-6. If they ask what will happen, give your read as a possibility using the numbers (required rate, wickets in hand, bowlers' overs left) — never as a certainty.
+6. If they ask what will happen, give your read as a possibility using the numbers (required rate, wickets in hand, bowlers' overs left), never as a certainty.
 7. Only talk about this match and cricket. Politely decline anything else.
 
 Language: ${LANGUAGE_RULES[lang]} Plain text, no markdown.`;
@@ -94,7 +103,7 @@ export function parseRecap(text: string): Recap {
   const out: Recap = { headline: "", recap: [], turning: "", now: "", next: [] };
   let section: keyof Recap | null = null;
   for (const raw of text.split("\n")) {
-    let line = raw.replace(/\*\*/g, "");
+    let line = raw.replace(/\*\*/g, "").replace(/\s*[\u2014\u2013]\s*/g, ", ");
     const tag = TAGS.find(([, re]) => re.test(line));
     if (tag) {
       section = tag[0];
