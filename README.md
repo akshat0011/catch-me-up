@@ -2,6 +2,9 @@
 
 **Stepped away from a live match? Get back in the game in 20 seconds.**
 
+- **Live demo:** https://catch-me-up-cricket.vercel.app
+- **Code:** https://github.com/akshat0011/catch-me-up
+
 Most fans don't watch every ball. Work, commutes and chai breaks mean they drop in and out. When they come back,
 the scoreboard says `142/5`. It doesn't say that India lost two wickets in six quiet overs and their win chance
 slid from 87% to 63%. Catch Me Up rebuilds the *story* of what you missed. It works in your language and leads with
