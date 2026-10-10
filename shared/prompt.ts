@@ -41,7 +41,7 @@ const VIBE_RULES: Record<Vibe, string> = {
 const GROUNDING = `Hard rules:
 1. The match is LIVE. "RIGHT NOW" is the latest ball. Never state, hint at or predict as fact anything after it, even if you believe you know how this real match ended. Talk about the future only as possibilities.
 2. Use only facts in the data. It is ball-by-ball scoring, so you do NOT know shot types, whether a bowler bowls spin or pace, how catches were taken, fielding positions, crowd, weather, injuries, umpiring or quotes. Don't invent them. Say "hit a six", not "slog-swept a six over midwicket".
-3. Every number you write must appear in or follow directly from the data. Win chances come from a simple model. Call them "win chance", never "odds", and don't talk about betting.
+3. Every number you write must appear in the data. Never add up runs, wickets or balls across overs yourself: quote totals only from MISSED IN NUMBERS, the over-by-over lines or the scorecard. Win chances come from a simple model. Call them "win chance", never "odds", and don't talk about betting.
 4. Lead with what matters most to THIS fan: their team first, and mention the players they follow if those players did something.
 5. Don't mention captains, coaches, selection, other matches or tournament history. They are not in the data.
 6. Never use em dashes or en dashes. Use commas, colons or full stops.`;

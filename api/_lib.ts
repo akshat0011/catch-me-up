@@ -3,7 +3,15 @@ import { getMatch } from "../shared/matches.js";
 import { LANGS, VIBES } from "../shared/prompt.js";
 import type { Lang, Prefs, Vibe } from "../shared/types.js";
 
-export const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+// Tried in order. Free-tier quotas are per model, so falling through on a 429 multiplies capacity.
+// Each entry carries the thinking setting that model accepts (2.5 uses a budget, 3.x uses a level).
+const MODELS: { id: string; thinking: Record<string, unknown> }[] = [
+  { id: process.env.GEMINI_MODEL || "gemini-3.5-flash", thinking: { thinkingLevel: "minimal" } },
+  { id: "gemini-3.5-flash-lite", thinking: { thinkingLevel: "minimal" } },
+  { id: "gemini-3.1-flash-lite", thinking: { thinkingLevel: "minimal" } },
+  { id: "gemini-2.5-flash", thinking: { thinkingBudget: 0 } },
+];
+const RETRYABLE = new Set([429, 500, 503]);
 
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -65,19 +73,25 @@ export function streamText(system: string, turns: Turn[], maxTokens: number): Re
     async start(controller) {
       let failed = false;
       try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent?alt=sse`,
-          {
-            method: "POST",
-            headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY ?? "" },
-            body: JSON.stringify({
-              systemInstruction: { parts: [{ text: system }] },
-              contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
-              generationConfig: { maxOutputTokens: maxTokens, temperature: 0.8, thinkingConfig: { thinkingLevel: "minimal" } },
-            }),
-          },
-        );
-        if (!res.ok || !res.body) throw new Error(`gemini http ${res.status}: ${(await res.text()).slice(0, 200)}`);
+        let res: Response | null = null;
+        for (const model of MODELS) {
+          res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model.id}:streamGenerateContent?alt=sse`,
+            {
+              method: "POST",
+              headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY ?? "" },
+              body: JSON.stringify({
+                systemInstruction: { parts: [{ text: system }] },
+                contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
+                generationConfig: { maxOutputTokens: maxTokens, temperature: 0.8, thinkingConfig: model.thinking },
+              }),
+            },
+          );
+          if (res.ok || !RETRYABLE.has(res.status)) break;
+          console.warn(`gemini ${model.id} returned ${res.status}, trying next model`);
+          await res.body?.cancel();
+        }
+        if (!res || !res.ok || !res.body) throw new Error(`gemini http ${res?.status}: ${(await res?.text())?.slice(0, 200)}`);
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buf = "";
